@@ -1,0 +1,140 @@
+---
+title: "ST588 Project 2 Preparation"
+author: "Matt Bray"
+format: html
+editor: visual
+---
+
+# ST588 Preparation/Data Exploration
+
+This code will be used to produce numerical and graphical summaries of the "Store Sales Data" from: [Kaggle](https://www.kaggle.com/datasets/juhi1994/superstore/data). This will allow the developer to get an idea of the data structure and interesting analyses that can be conveyed through interactive tools such as a Shiny app.
+
+Below, we are calling required packages for the code that follows:
+
+```{r}
+library(tidyverse)
+library(readxl)
+library(questionr)
+library(vtable)
+```
+
+The following code will import the data from excel into R:
+
+```{r}
+data<-read_excel("./US Superstore data.xls")
+```
+
+First, we'll do some basic data exploration to understand structure:
+
+```{r}
+head(data)
+names(data)
+```
+
+A couple of variables may be better modelled as factors and we'll rename all variables for programmatic consistency...
+
+```{r}
+factors<-c("shipMode", "segment", "country", "state", "postalCode", "region", "category", "subCategory")
+data1 <- data |>
+  rename("rowID" = "Row ID",
+         "orderID" = "Order ID",
+         "orderDate" = "Order Date",
+         "shipDate" = "Ship Date",
+         "shipMode" = "Ship Mode",
+         "customerID" = "Customer ID",
+         "customerName" = "Customer Name",
+         "segment" = "Segment",
+         "country" = "Country",
+         "city" = "City",
+         "state" = "State",
+         "postalCode" = "Postal Code",
+         "region" = "Region",
+         "productID" = "Product ID",
+         "category" = "Category",
+         "subCategory" = "Sub-Category",
+         "productName" = "Product Name",
+         "sales" = "Sales",
+         "quantity" = "Quantity",
+         "discount" = "Discount",
+         "profit" = "Profit"
+         ) |>
+  mutate_at(factors, factor)
+```
+
+Now, let's reinspect:
+
+```{r}
+head(data1)
+names(data1)
+str(data1)
+```
+
+It appears that the requested variables have been reset as Factors.
+
+## Let's explore some of the categorical variables
+
+First, number of items sold by Segment:
+
+```{r}
+#code to see sales by customer (Segment) type:
+segFreq <- wtd.table(x=data1[,8], weight=data1[,19])
+segFreq
+```
+
+Let's Visualize Sales by Segment:
+
+```{r}
+ggplot(data = data1, mapping = aes(x=segment, y=quantity)) +
+ geom_col() +
+ labs(x = "Market Segment",
+      y = "Items Sold (#)")
+```
+
+Next, number of items sold by State:
+
+```{r}
+#code to see sales by state:
+stateFreq <- wtd.table(x=data1[,11], weight=data1[,19])
+stateFreq
+```
+Then, let's visualize sales volume by state:
+```{r}
+data1 |>
+  ggplot(data = data1, mapping = aes(x=state, y=quantity)) +
+ geom_col() +
+ theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+ labs(x = "State",
+      y = "Items Sold (#)")
+```
+Now that we've looked at Frequencies, let's look at some Numerical Summaries.
+
+First, let's see if there if there is anything interesting about sales and profit by Market Segment:
+```{r}
+ggplot(data = data1, mapping = aes(x=segment, y=sales)) +
+ geom_violin() +
+ labs(x = "Market Segment",
+      y = "Sales")
+```
+
+
+```{r}
+ggplot(data = data1, mapping = aes(x=segment, y=profit)) +
+ geom_violin() +
+ labs(x = "Market Segment",
+      y = "Profit")
+```
+
+Now, we'll create  number summary to see if perhaps the visualization obscures profitbility, since the boxplots appear centered at 0...
+
+```{r}
+segmentProfSum <- sumtable(data=data1, vars="profit", group="segment")
+segmentProfSum
+```
+Are discounted items less profitable?
+```{r}
+ggplot(data = data1, mapping = aes(x=discount, y=profit)) +
+ geom_point() +
+ labs(x = "Discount",
+      y = "Profit")
+```
+It appears that generally, discounted products above 0.2 are not profitble.
