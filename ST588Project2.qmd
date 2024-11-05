@@ -16,6 +16,7 @@ library(tidyverse)
 library(readxl)
 library(questionr)
 library(vtable)
+library(hardhat)
 ```
 
 The following code will import the data from excel into R:
@@ -84,10 +85,11 @@ segFreq
 Let's Visualize Sales by Segment:
 
 ```{r}
-ggplot(data = data1, mapping = aes(x=segment, y=quantity)) +
+ggplot(data = data1, mapping = aes(x=segment, y=quantity, fill=segment)) +
  geom_col() +
  labs(x = "Market Segment",
-      y = "Items Sold (#)")
+      y = "Items Sold (#)",
+      fill = "Market Segment")
 ```
 
 Next, number of items sold by State:
@@ -132,9 +134,31 @@ segmentProfSum
 ```
 Are discounted items less profitable?
 ```{r}
-ggplot(data = data1, mapping = aes(x=discount, y=profit)) +
+ggplot(data = data1, mapping = aes(x=discount, y=profit, color=year(orderDate))) +
  geom_point() +
  labs(x = "Discount",
-      y = "Profit")
+      y = "Profit",
+      color="Year")
 ```
 It appears that generally, discounted products above 0.2 are not profitble.
+
+What about profit by month?  Is there anything related to the holiday seasons?
+```{r}
+ggplot(data = data1, mapping = aes(x=month(orderDate, label=TRUE), y=profit)) +
+ geom_point() +
+ labs(x = "Order Month",
+      y = "Profit")
+```
+Are certain years more profitable?
+```{r}
+ggplot(data = data1, mapping = aes(x=year(orderDate), y=profit, color=month(orderDate, label=TRUE))) +
+ geom_point() +
+ labs(x = "Order Year",
+      y = "Profit",
+      color = "Month")
+```
+
+```{r}
+weighted_table(data1$shipMode, weights = data1$quantity)
+```
+
