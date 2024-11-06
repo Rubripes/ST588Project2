@@ -68,13 +68,19 @@ sidebarLayout(
     selectInput("numericVar",
                 "Choose Numeric Variable for Numeric Summary by Category",
                 c("Profit" = "profit",
-                  "Discount" = "discount"))
+                  "Discount" = "discount")),
+    #input selector for sales vs. profit
+    selectInput("salesVProfit",
+                "Explore Sales vs. Profits",
+                c("Profit" = "profit",
+                  "Sales" = "sales"))
     ),
     mainPanel(
       tableOutput("contingency"),
       plotOutput("contingencyPlot"),
       tableOutput("regionPlot"),
-      tableOutput("categoricalProfits")
+      tableOutput("categoricalProfits"),
+      plotOutput("salesVProfit")
     )
   )
 )
@@ -90,7 +96,7 @@ server <- function(input, output, session) {
     wtd.table(xfactor[,1], weights=xfactor[,2])
   })
   #display bar graph for selected variables in 1 way contingency table above
-  output$contingencyPlot <-renderPlot({
+  output$contingencyPlot <- renderPlot({
     xfactor <- data1 |> 
       select(c(input$variable,
                "quantity"))
@@ -113,6 +119,14 @@ server <- function(input, output, session) {
   output$categoricalProfits <- renderTable({
     sumTable<-sumtable(data=data1, vars=input$numericVar, group=input$variable, out="return")
     sumTable
+  })
+  #explore how discounts may impact sales and profits
+  output$salesVProfit <- renderPlot({
+  ggplot(data = data1, mapping = aes_string(x=data1$discount, y=input$salesVProfit, color=year(data1$orderDate))) +
+    geom_point() +
+    labs(x = "Discount",
+         y = input$salesVProfit,
+         color="Year")
   })
 }
 
