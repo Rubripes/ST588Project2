@@ -52,8 +52,8 @@ ui <- fluidPage(
 sidebarLayout(
   sidebarPanel(
     selectInput("variable",
-                "Category to Display Counts:",
-                c("Segment" = "segment",
+                "Choose Category to Visualize Sales Volume by Category:",
+                c("Market Segment" = "segment",
                   "Ship Mode" = "shipMode",
                   "Category" = "category")
 )),
@@ -74,16 +74,17 @@ server <- function(input, output, session) {
                "quantity"))
     wtd.table(xfactor[,1], weights=xfactor[,2])
   })
-  #display counts for selected variables in 1 way contingency table above
+  #display bar graph for selected variables in 1 way contingency table above
   output$contingencyPlot <-renderPlot({
     xfactor <- data1 |> 
       select(c(input$variable,
                "quantity"))
     ggplot(data = xfactor, mapping = aes_string(x=input$variable, y=xfactor$quantity, fill=input$variable)) +
       geom_col() +
-      labs(x = "Market Segment",
+      labs(x = input$variable,
            y = "Items Sold (#)",
-           fill = "Market Segment")
+           fill = input$variable,
+           title = "# Items Sold by Category")
   })
 }
 
