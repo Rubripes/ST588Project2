@@ -55,11 +55,18 @@ sidebarLayout(
                 "Choose Category to Visualize Sales Volume by Category:",
                 c("Market Segment" = "segment",
                   "Ship Mode" = "shipMode",
-                  "Category" = "category")
-)),
+                  "Category" = "category")),
+    selectInput("geographicRegion",
+                "Choose Region for 2-way Frequency Table",
+                c("Country" = "country",
+                  "City" = "city",
+                  "State" = "state",
+                  "Region" = "region"))
+    ),
     mainPanel(
       tableOutput("contingency"),
-      plotOutput("contingencyPlot")
+      plotOutput("contingencyPlot"),
+      tableOutput("regionPlot")
     )
   )
 )
@@ -86,6 +93,15 @@ server <- function(input, output, session) {
            fill = input$variable,
            title = "# Items Sold by Category")
   })
+  #2 way contingcy table by user selected geography for same categories as 2way table.
+  output$regionPlot <- renderTable({
+    xfactor <- data1 |> 
+      select(c(input$variable,
+               input$geographicRegion,
+               "quantity"))
+    wtd.table(xfactor[,1], xfactor[,2], weights=xfactor[,3], na.rm=TRUE)
+  })
+  
 }
 
 # Run the application 
