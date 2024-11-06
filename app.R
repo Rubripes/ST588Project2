@@ -73,8 +73,14 @@ sidebarLayout(
     selectInput("salesVProfit",
                 "Explore Sales vs. Profits",
                 c("Profit" = "profit",
-                  "Sales" = "sales"))
+                  "Sales" = "sales")),
+    #select input for date coloring for sales vs profit plot
+    selectInput("yearVMonth",
+                "Color Sales vs. Profits by Month or Year:",
+                c("Year" = "year",
+                  "Month" = "month"))
     ),
+  
     mainPanel(
       tableOutput("contingency"),
       plotOutput("contingencyPlot"),
@@ -122,13 +128,16 @@ server <- function(input, output, session) {
   })
   #explore how discounts may impact sales and profits
   output$salesVProfit <- renderPlot({
-  ggplot(data = data1, mapping = aes_string(x=data1$discount, y=input$salesVProfit, color=year(data1$orderDate))) +
+    data2 <- data1 |>
+      mutate(month = month(orderDate),
+               year = year(orderDate))
+  ggplot(data = data2, mapping = aes_string(x=data1$discount, y=input$salesVProfit, color=input$yearVMonth)) +
     geom_point() +
-    labs(x = "Discount",
+    labs(x = input$data1$discount,
          y = input$salesVProfit,
-         color="Year")
+         color=input$yearVMonth)
   })
 }
-
+ 
 # Run the application 
 shinyApp(ui = ui, server = server)
