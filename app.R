@@ -58,20 +58,33 @@ sidebarLayout(
                   "Category" = "category")
 )),
     mainPanel(
-      tableOutput("contingency")
+      tableOutput("contingency"),
+      plotOutput("contingencyPlot")
     )
   )
 )
 
 
-# Define server logic required to create two way contingency table:
+# Define server logic:
 server <- function(input, output, session) {
+  #1 way contingency table.  Subset (select) data using selectInput
   output$contingency <- renderTable({
     xfactor <- data1 |> 
       select(c(input$variable,
                "quantity"))
     wtd.table(xfactor[,1], weights=xfactor[,2])
-})
+  })
+  #display counts for selected variables in 1 way contingency table above
+  output$contingencyPlot <-renderPlot({
+    xfactor <- data1 |> 
+      select(c(input$variable,
+               "quantity"))
+    ggplot(data = xfactor, mapping = aes_string(x=input$variable, y=xfactor$quantity, fill=input$variable)) +
+      geom_col() +
+      labs(x = "Market Segment",
+           y = "Items Sold (#)",
+           fill = "Market Segment")
+  })
 }
 
 # Run the application 
