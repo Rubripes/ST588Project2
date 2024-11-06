@@ -51,22 +51,30 @@ ui <- fluidPage(
     # Sidebar with a select dropdown to select Factor to explore frequencies for different factors
 sidebarLayout(
   sidebarPanel(
+    #input selector for factor variable 1
     selectInput("variable",
                 "Choose Category to Visualize Sales Volume by Category:",
                 c("Market Segment" = "segment",
                   "Ship Mode" = "shipMode",
                   "Category" = "category")),
+    #input selector for factor variable 2
     selectInput("geographicRegion",
                 "Choose Region for 2-way Frequency Table",
                 c("Country" = "country",
                   "City" = "city",
                   "State" = "state",
-                  "Region" = "region"))
+                  "Region" = "region")),
+    #input selector for numeric variable for summaries
+    selectInput("numericVar",
+                "Choose Numeric Variable for Numeric Summary by Category",
+                c("Profit" = "profit",
+                  "Discount" = "discount"))
     ),
     mainPanel(
       tableOutput("contingency"),
       plotOutput("contingencyPlot"),
-      tableOutput("regionPlot")
+      tableOutput("regionPlot"),
+      tableOutput("categoricalProfits")
     )
   )
 )
@@ -101,7 +109,11 @@ server <- function(input, output, session) {
                "quantity"))
     wtd.table(xfactor[,1], xfactor[,2], weights=xfactor[,3], na.rm=TRUE)
   })
-  
+  #Generate numeric summaries of the profits by selected factor
+  output$categoricalProfits <- renderTable({
+    sumTable<-sumtable(data=data1, vars=input$numericVar, group=input$variable, out="return")
+    sumTable
+  })
 }
 
 # Run the application 
