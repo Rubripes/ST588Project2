@@ -64,15 +64,14 @@ sidebarLayout(
 )
 
 
-# Define server logic required to draw a histogram
+# Define server logic required to create two way contingency table:
 server <- function(input, output, session) {
-  
-  myTable = reactiveVal()
-  myData = reactive({
-   input$variable
-   data = data1
-   myTable(wtd.table(x=input$variable, weights = data1$quantity))
-  })
+  output$contingency <- renderTable({
+    xfactor <- data1 |> 
+      select(c(input$variable,
+               "quantity"))
+    wtd.table(xfactor[,1], weights=xfactor[,2])
+})
 }
 
 # Run the application 
