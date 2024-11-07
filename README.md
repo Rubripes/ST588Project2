@@ -1,1 +1,2 @@
 # ST588Project2
+This project was an exploration of sales data from a large supply company.  I created a static file to explore some possible analyses that could be interesting to a Shiny App user.  Not all outputs created in the static analysis were transcribed to the Shiny App, since I learned about some Shiny App details that made other outputs more interesting, or I was not able to figure out how to translate the output from static form to Shiny.  
