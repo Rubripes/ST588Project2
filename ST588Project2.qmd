@@ -17,6 +17,10 @@ library(readxl)
 library(questionr)
 library(vtable)
 library(hardhat)
+library(terra)
+library(geofacet)
+library(gganimate)
+library(ggpie)
 ```
 
 The following code will import the data from excel into R:
@@ -161,4 +165,5 @@ ggplot(data = data1, mapping = aes(x=year(orderDate), y=profit, color=month(orde
 ```{r}
 weighted_table(data1$shipMode, weights = data1$quantity)
 ```
+
 

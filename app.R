@@ -11,6 +11,9 @@ library(readxl)
 library(questionr)
 library(vtable)
 library(hardhat)
+library(geofacet)
+library(ggpie)
+
 
 #data are stored in same folder as app.  Read dataset for app.
 data<-read_excel("./US Superstore data.xls")
@@ -86,7 +89,9 @@ sidebarLayout(
       plotOutput("contingencyPlot"),
       tableOutput("regionPlot"),
       tableOutput("categoricalProfits"),
-      plotOutput("salesVProfit")
+      plotOutput("salesVProfit"),
+      plotOutput("stateSales"),
+      plotOutput("pie")
     )
   )
 )
@@ -136,6 +141,22 @@ server <- function(input, output, session) {
     labs(x = input$data1$discount,
          y = input$salesVProfit,
          color=input$yearVMonth)
+  })
+  #visualize sales volume between categories across the states:
+  output$stateSales <- renderPlot({
+    ggplot(data = data1, aes_string(x=input$variable, y=data1$quantity, fill = input$variable)) +
+      geom_col() +
+      coord_flip() +
+      facet_geo(~ state) +
+      theme_bw()
+  })
+  #animate a visual of profit or sales data, as selected by user:
+  output$pie <- renderPlot({
+    ggplot(data1,aes_string(x="1", y=data1$quantity, fill=input$variable))+
+      geom_bar(width=1, stat="identity") +
+      coord_polar("y", start=0) +
+      theme_void() +
+      labs(title = paste0("Pie Chart of ", input$variable))
   })
 }
  
