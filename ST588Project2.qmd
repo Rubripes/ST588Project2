@@ -163,7 +163,7 @@ ggplot(data = data1, mapping = aes(x=year(orderDate), y=profit, color=month(orde
       color = "Month")
 ```
 
-
+Geographic Plot
 ```{r}
     ggplot(data = data1, aes_string(x=data1$segment, y=data1$quantity, fill = data1$segment)) +
       geom_col() +
@@ -173,5 +173,9 @@ ggplot(data = data1, mapping = aes(x=year(orderDate), y=profit, color=month(orde
       labs(title = paste0("Geographic Representation of quantity by ", data1$segment))
 ```
 
+2 Way Contingency Table
+```{r}
+wtd.table(data1$segment, data1$region, weights=data1$quantity, na.rm=TRUE)
+```
 
 

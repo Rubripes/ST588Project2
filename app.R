@@ -118,15 +118,15 @@ sidebarLayout(
           )),
         
         nav_panel("Data Exploration",
-         tableOutput("contingency"),
-         plotOutput("contingencyPlot"),
-         tableOutput("regionPlot"),
-         tableOutput("categoricalProfits"),
-         plotOutput("salesVProfit"),
-         plotOutput("stateSales"),
-         plotOutput("pie"),
-         plotOutput("profitQuant"),
-         plotOutput("profitYear")),
+         withSpinner(tableOutput("contingency")),
+         withSpinner(plotOutput("contingencyPlot")),
+         withSpinner(tableOutput("regionPlot")),
+         withSpinner(tableOutput("categoricalProfits")),
+         withSpinner(plotOutput("salesVProfit")),
+         withSpinner(plotOutput("stateSales")),
+         withSpinner(plotOutput("pie")),
+         withSpinner(plotOutput("profitQuant")),
+         withSpinner(plotOutput("profitYear"))),
         
         nav_panel("Data Download", DT::dataTableOutput("data1"))
       
@@ -175,7 +175,7 @@ server <- function(input, output, session) {
   })
   #Generate numeric summaries of the profits by selected factor
   output$categoricalProfits <- renderTable({
-    sumTable<-sumtable(data=data1, vars=input$numericVar, group=input$variable, out="return")
+    sumTable<-sumtable(data=data3, vars=input$numericVar, group=input$variable, out="return")
     sumTable
   })
   #explore how discounts may impact sales and profits
@@ -201,7 +201,7 @@ server <- function(input, output, session) {
   })
   #create pie chart for sales by selected variable:
   output$pie <- renderPlot({
-    ggplot(data3,aes_string(x="1", y=data1$quantity, fill=input$variable))+
+    ggplot(data3,aes_string(x="1", y=data3$quantity, fill=input$variable))+
       geom_bar(width=1, stat="identity") +
       coord_polar("y", start=0) +
       theme_void() +
