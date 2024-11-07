@@ -12,7 +12,7 @@ library(questionr)
 library(vtable)
 library(hardhat)
 library(geofacet)
-library(ggpie)
+library(bslib)
 
 
 #data are stored in same folder as app.  Read dataset for app.
@@ -20,7 +20,7 @@ data<-read_excel("./US Superstore data.xls")
 
 #data$names are reformatted for programmatic consistency, and are coerced to Factors as appropriate
 factors<-c("shipMode", "segment", "country", "state", "postalCode", "region", "category", "subCategory")
-data1 <- data |>
+data3 <- data |>
   rename("rowID" = "Row ID",
          "orderID" = "Order ID",
          "orderDate" = "Order Date",
@@ -54,6 +54,22 @@ ui <- fluidPage(
     # Sidebar with a select dropdown to select Factor to explore frequencies for different factors
 sidebarLayout(
   sidebarPanel(
+    #slider input to select low end of profit for subsetting
+    sliderInput("profitRangeLow", 
+                "Profit Range to Subset From (Lower Bound)",
+                min = -6600,
+                max = 8400,
+                value = -6600,
+                step = 100),
+    #slider input to select high end of profit for subsetting
+    sliderInput("profitRangeHigh", 
+                "Profit Range to Subset (Upper Bound",
+                min = -6600,
+                max = 8400,
+                value = 8400,
+                step = 100),
+    actionButton("subset",
+                 "Subset Profit Range"),
     #input selector for factor variable 1
     selectInput("variable",
                 "Choose Category to Visualize Sales Volume by Category:",
@@ -81,25 +97,50 @@ sidebarLayout(
     selectInput("yearVMonth",
                 "Color Sales vs. Profits by Month or Year:",
                 c("Year" = "year",
-                  "Month" = "month"))
+                  "Month" = "month")),
+    selectInput("yearProfit",
+                "Year to Explore Profit by:",
+                 year(data1$orderDate))
     ),
   
     mainPanel(
-      tableOutput("contingency"),
-      plotOutput("contingencyPlot"),
-      tableOutput("regionPlot"),
-      tableOutput("categoricalProfits"),
-      plotOutput("salesVProfit"),
-      plotOutput("stateSales"),
-      plotOutput("pie")
+      navset_card_underline(
+        nav_panel("About", markdown(
+          glue::glue(
+            "These data are sales data from a large company and were downloaded from [Kaggle](https://www.kaggle.com/datasets/juhi1994/superstore/data).  This app allows the user to explore sales volumes, profits, discounts, etc. across 4 years (2014-2017).  The sidebar functions are used to subset categorical and numeric variables to allow the user to visualize and quantify different values of interest to the business.  The Data tab displays the data.  The data in the Data tab can be subset by creating a range of profits using the sliders in the sidebar and pressing the 'Subset Profit Range' button."
+          )
+          )),
+        
+        nav_panel("Data Exploration",
+         tableOutput("contingency"),
+         plotOutput("contingencyPlot"),
+         tableOutput("regionPlot"),
+         tableOutput("categoricalProfits"),
+         plotOutput("salesVProfit"),
+         plotOutput("stateSales"),
+         plotOutput("pie"),
+         plotOutput("profitQuant"),
+         plotOutput("profitYear")),
+        
+        nav_panel("Data", DT::dataTableOutput("data1"))
+      
     )
   )
-)
+))
+
 
 
 # Define server logic:
 server <- function(input, output, session) {
   #1 way contingency table.  Subset (select) data using selectInput
+  output$data1 <- renderDataTable({
+    #Add dependency on Go Butter
+    input$goButton
+    
+    data1 |> 
+      filter(data3$profit %in% input$profitRangeLow:input$profitRangeHigh)
+  })
+  
   output$contingency <- renderTable({
     xfactor <- data1 |> 
       select(c(input$variable,
@@ -138,7 +179,8 @@ server <- function(input, output, session) {
                year = year(orderDate))
   ggplot(data = data2, mapping = aes_string(x=data1$discount, y=input$salesVProfit, color=input$yearVMonth)) +
     geom_point() +
-    labs(x = input$data1$discount,
+    labs(title=paste0("Does Discount affect ", input$salesVProfit, "?"),
+         x = input$data1$discount,
          y = input$salesVProfit,
          color=input$yearVMonth)
   })
@@ -148,15 +190,34 @@ server <- function(input, output, session) {
       geom_col() +
       coord_flip() +
       facet_geo(~ state) +
-      theme_bw()
+      theme_bw() +
+      labs(title = paste0("Geographic Representation of quantity by ", input$variable))
   })
-  #animate a visual of profit or sales data, as selected by user:
+  #create pie chart for sales by selected variable:
   output$pie <- renderPlot({
     ggplot(data1,aes_string(x="1", y=data1$quantity, fill=input$variable))+
       geom_bar(width=1, stat="identity") +
       coord_polar("y", start=0) +
       theme_void() +
       labs(title = paste0("Pie Chart of ", input$variable))
+  })
+  #explore profit by volume:
+  output$profitQuant <- renderPlot({
+    ggplot(data1, aes_string(x=data1$quantity, y=data1$profit, color=input$variable))+
+      geom_point() +
+      labs(title = paste0("Is Profit Impacted by Order Size, Categorized by ", input$variable),
+           x = "Purchase Item Quantity",
+           y = "Profit")
+  })
+  output$profitYear <- renderPlot({
+    data2 <- data1 |>
+      mutate(year = year(orderDate)) |>
+      filter(year == input$yearProfit)
+  ggplot(data = data2, mapping = aes_string(x=input$variable, y=data2$profit)) +
+    geom_violin() +
+    labs(title = paste0("Profit across ", input$variable, " by ", input$yearProfit),
+         x = input$variable,
+         y = "Profit")
   })
 }
  

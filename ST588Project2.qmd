@@ -167,3 +167,4 @@ weighted_table(data1$shipMode, weights = data1$quantity)
 ```
 
 
+
