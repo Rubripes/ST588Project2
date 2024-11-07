@@ -13,6 +13,7 @@ library(vtable)
 library(hardhat)
 library(geofacet)
 library(bslib)
+library(shinycssloaders)
 
 
 #data are stored in same folder as app.  Read dataset for app.
@@ -51,7 +52,7 @@ ui <- fluidPage(
     # Application title
     titlePanel("Store Sales Data"),
 
-    # Sidebar with a select dropdown to select Factor to explore frequencies for different factors
+    # create Sidebar layout
 sidebarLayout(
   sidebarPanel(
     #slider input to select low end of profit for subsetting
@@ -68,8 +69,12 @@ sidebarLayout(
                 max = 8400,
                 value = 8400,
                 step = 100),
+    #create action button that subsets data
     actionButton("subset",
-                 "Subset Profit Range"),
+                 "Display Data in Profit Range"),
+    #create download button that downloads subset data
+    downloadLink("downloadData",
+                 "Download Data from Data Download Tab"),
     #input selector for factor variable 1
     selectInput("variable",
                 "Choose Category to Visualize Sales Volume by Category:",
@@ -83,6 +88,7 @@ sidebarLayout(
                   "City" = "city",
                   "State" = "state",
                   "Region" = "region")),
+                  
     #input selector for numeric variable for summaries
     selectInput("numericVar",
                 "Choose Numeric Variable for Numeric Summary by Category",
@@ -100,7 +106,7 @@ sidebarLayout(
                   "Month" = "month")),
     selectInput("yearProfit",
                 "Year to Explore Profit by:",
-                 year(data1$orderDate))
+                 year(data3$orderDate))
     ),
   
     mainPanel(
@@ -122,7 +128,7 @@ sidebarLayout(
          plotOutput("profitQuant"),
          plotOutput("profitYear")),
         
-        nav_panel("Data", DT::dataTableOutput("data1"))
+        nav_panel("Data Download", DT::dataTableOutput("data1"))
       
     )
   )
@@ -133,23 +139,23 @@ sidebarLayout(
 # Define server logic:
 server <- function(input, output, session) {
   #1 way contingency table.  Subset (select) data using selectInput
-  output$data1 <- renderDataTable({
-    #Add dependency on Go Butter
-    input$goButton
-    
-    data1 |> 
-      filter(data3$profit %in% input$profitRangeLow:input$profitRangeHigh)
+  observeEvent(input$subset,{
+    output$data1 <- renderDataTable({
+    #isolate action data subsetting so that sliders don't have effect unless action button is pushed.
+    isolate(data3 |> 
+      filter(between(data3$profit, input$profitRangeLow, input$profitRangeHigh)))
+    })
   })
   
   output$contingency <- renderTable({
-    xfactor <- data1 |> 
+    xfactor <- data3 |> 
       select(c(input$variable,
                "quantity"))
     wtd.table(xfactor[,1], weights=xfactor[,2])
   })
   #display bar graph for selected variables in 1 way contingency table above
   output$contingencyPlot <- renderPlot({
-    xfactor <- data1 |> 
+    xfactor <- data3 |> 
       select(c(input$variable,
                "quantity"))
     ggplot(data = xfactor, mapping = aes_string(x=input$variable, y=xfactor$quantity, fill=input$variable)) +
@@ -161,7 +167,7 @@ server <- function(input, output, session) {
   })
   #2 way contingcy table by user selected geography for same categories as 2way table.
   output$regionPlot <- renderTable({
-    xfactor <- data1 |> 
+    xfactor <- data3 |> 
       select(c(input$variable,
                input$geographicRegion,
                "quantity"))
@@ -174,10 +180,10 @@ server <- function(input, output, session) {
   })
   #explore how discounts may impact sales and profits
   output$salesVProfit <- renderPlot({
-    data2 <- data1 |>
+    data2 <- data3 |>
       mutate(month = month(orderDate),
                year = year(orderDate))
-  ggplot(data = data2, mapping = aes_string(x=data1$discount, y=input$salesVProfit, color=input$yearVMonth)) +
+  ggplot(data = data2, mapping = aes_string(x=data2$discount, y=input$salesVProfit, color=input$yearVMonth)) +
     geom_point() +
     labs(title=paste0("Does Discount affect ", input$salesVProfit, "?"),
          x = input$data1$discount,
@@ -186,7 +192,7 @@ server <- function(input, output, session) {
   })
   #visualize sales volume between categories across the states:
   output$stateSales <- renderPlot({
-    ggplot(data = data1, aes_string(x=input$variable, y=data1$quantity, fill = input$variable)) +
+    ggplot(data = data3, aes_string(x=input$variable, y=data3$quantity, fill = input$variable)) +
       geom_col() +
       coord_flip() +
       facet_geo(~ state) +
@@ -195,7 +201,7 @@ server <- function(input, output, session) {
   })
   #create pie chart for sales by selected variable:
   output$pie <- renderPlot({
-    ggplot(data1,aes_string(x="1", y=data1$quantity, fill=input$variable))+
+    ggplot(data3,aes_string(x="1", y=data1$quantity, fill=input$variable))+
       geom_bar(width=1, stat="identity") +
       coord_polar("y", start=0) +
       theme_void() +
@@ -203,14 +209,14 @@ server <- function(input, output, session) {
   })
   #explore profit by volume:
   output$profitQuant <- renderPlot({
-    ggplot(data1, aes_string(x=data1$quantity, y=data1$profit, color=input$variable))+
+    ggplot(data3, aes_string(x=data3$quantity, y=data3$profit, color=input$variable))+
       geom_point() +
       labs(title = paste0("Is Profit Impacted by Order Size, Categorized by ", input$variable),
            x = "Purchase Item Quantity",
            y = "Profit")
   })
   output$profitYear <- renderPlot({
-    data2 <- data1 |>
+    data2 <- data3 |>
       mutate(year = year(orderDate)) |>
       filter(year == input$yearProfit)
   ggplot(data = data2, mapping = aes_string(x=input$variable, y=data2$profit)) +
@@ -219,6 +225,14 @@ server <- function(input, output, session) {
          x = input$variable,
          y = "Profit")
   })
+output$downloadData <- downloadHandler(
+ filename = function() {
+  paste('data-', Sys.Date(), '.csv', sep='')
+},
+  content = function(con) {
+     write.csv(data1, con)
+   }
+ )
 }
  
 # Run the application 

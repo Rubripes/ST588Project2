@@ -21,6 +21,7 @@ library(terra)
 library(geofacet)
 library(gganimate)
 library(ggpie)
+library(shinycssloaders)
 ```
 
 The following code will import the data from excel into R:
@@ -162,8 +163,14 @@ ggplot(data = data1, mapping = aes(x=year(orderDate), y=profit, color=month(orde
       color = "Month")
 ```
 
+
 ```{r}
-weighted_table(data1$shipMode, weights = data1$quantity)
+    ggplot(data = data1, aes_string(x=data1$segment, y=data1$quantity, fill = data1$segment)) +
+      geom_col() +
+      coord_flip() +
+      facet_geo(~ state) +
+      theme_bw() +
+      labs(title = paste0("Geographic Representation of quantity by ", data1$segment))
 ```
 
 
